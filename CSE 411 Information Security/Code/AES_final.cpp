@@ -432,6 +432,7 @@ void AES_Encrypt(unsigned char state[4][4], unsigned char *expanded_key, unsigne
         printf("%02X", cipher_text[i]);
         fprintf(fp, "%02X", cipher_text[i]);
     }
+   // fprintf(fp, "\n", cipher_text[i]);
     cout << endl;
     fclose(fp);
 }
@@ -484,6 +485,8 @@ void aes(string plain_text, string key, unsigned char *cipher_text)
 
     AES_Decrypt(state, expanded_key);
 }
+
+
 
 int main()
 {

@@ -494,6 +494,6 @@ string read_file()
         cipher_text[i] = encrypted[i];
     }
     cipher_text[i] = '\0';
-    // cout << cipher_text << "\n";
+    cout << cipher_text << "\n";
     return cipher_text;
 }
