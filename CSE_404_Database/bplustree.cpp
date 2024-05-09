@@ -61,57 +61,62 @@ node *searchPosition(node *currentnode, string word)
             if (word < currentnode->word[targetNode])
                 break;
         }
+
         currentnode = currentnode->childNodePointers[targetNode];
+        hopsize++;
+        //     cout<<hopsize<<"\n";
+        // cout << currentnode->word[0] << "\n";
+    }
+
+    return currentnode;
+}
+node *path(node *currentnode, string word)
+{
+    hopsize = 0;
+    while (currentnode->isLeaf == false)
+    {
+        int targetNode;
+        ofstream file;
+        file.open("path.txt", ios::app);
+        file << hopsize + 1 << " : " << currentnode->word[0] << "\n";
+        file.close();
+        for (targetNode = 0; targetNode < currentnode->keyQuantity; targetNode++)
+        {
+            if (word < currentnode->word[targetNode])
+                break;
+        }
+
+        currentnode = currentnode->childNodePointers[targetNode];
+
         hopsize++;
     }
 
     return currentnode;
 }
-
 void addWithParent(node *parent, string word, node *rightchild)
 
 {
-    int track = parent->keyQuantity;
-    track--;
-
-    if (track > -1)
+    int keyIndex = parent->keyQuantity;
+    int newInsertIndex;
+    if (keyIndex > 0)
     {
-        for (; track > -1; track--)
+        for (newInsertIndex = keyIndex - 1; newInsertIndex >= 0; newInsertIndex--)
         {
-            if (parent->word[track] <= word)
-                break;
-            else
+            if (word < parent->word[newInsertIndex])
             {
-                parent->word[track + 1] = parent->word[track];
-                parent->childNodePointers[track + 2] = parent->childNodePointers[track + 1];
+                parent->word[newInsertIndex + 1] = parent->word[newInsertIndex];
+                parent->childNodePointers[newInsertIndex + 2] = parent->childNodePointers[newInsertIndex + 1];
             }
+            else
+                break;
         }
+        newInsertIndex++;
     }
-    parent->word[track + 1] = word;
-    parent->childNodePointers[track + 2] = rightchild;
+    else
+        newInsertIndex = 0;
+    parent->word[newInsertIndex] = word;
+    parent->childNodePointers[newInsertIndex + 1] = rightchild;
     parent->keyQuantity++;
-
-    // int keyIndex = parent->keyQuantity;
-    // int newInsertIndex;
-    // if (keyIndex > 0)
-    // {
-    //     for (newInsertIndex = keyIndex - 1; newInsertIndex >= 0; newInsertIndex--)
-    //     {
-    //         if (word < parent->word[newInsertIndex])
-    //         {
-    //             parent->word[newInsertIndex + 1] = parent->word[newInsertIndex];
-    //             parent->childNodePointers[newInsertIndex + 2] = parent->childNodePointers[newInsertIndex + 1];
-    //         }
-    //         else
-    //             break;
-    //     }
-    //     newInsertIndex++;
-    // }
-    // else
-    //     newInsertIndex = 0;
-    // parent->word[newInsertIndex] = word;
-    // parent->childNodePointers[newInsertIndex + 1] = rightchild;
-    // parent->keyQuantity++;
 }
 
 void moveUp(node *parent, string word, node *leftchild, node *rightchild)
@@ -124,61 +129,33 @@ void moveUp(node *parent, string word, node *leftchild, node *rightchild)
     rightchild->parentNode = parent;
     addWithParent(parent, word, rightchild);
 
-    // balancing in the parent node
     if (parent->keyQuantity == order)
     {
-        node *secondNode = createNewNode(); // second node
-        secondNode->isLeaf = false;
-
-        int mark = parent->keyQuantity, j = 0;
-
-        for (int i = mark - (order / 2); i < order; i++)
+        // 1 ta beshi hoye gese, so split korte hbe
+        node *splittedNewNode = createNewNode();
+        splittedNewNode->isLeaf = false;
+        int count = parent->keyQuantity, j = 0, index;
+        // left biased
+        for (index = count - count / 2; index < order; index++)
         {
-            secondNode->word[j] = parent->word[i];
+            splittedNewNode->word[j] = parent->word[index];
+
             if (j == 0)
             {
-                secondNode->childNodePointers[0] = parent->childNodePointers[i]; // look up later
-                secondNode->childNodePointers[0]->parentNode = secondNode;
+                splittedNewNode->childNodePointers[0] = parent->childNodePointers[index];
+                splittedNewNode->childNodePointers[0]->parentNode = splittedNewNode;
             }
+            splittedNewNode->childNodePointers[j + 1] = parent->childNodePointers[index + 1];
+            splittedNewNode->childNodePointers[j + 1]->parentNode = splittedNewNode;
 
-            secondNode->childNodePointers[j + 1] = parent->childNodePointers[i + 1];
-            secondNode->childNodePointers[j + 1]->parentNode = secondNode;
             j++;
         }
 
-        parent->keyQuantity -= (mark / 2 + 1);
-        secondNode->keyQuantity = (mark / 2);
+        parent->keyQuantity -= (index / 2 + 1);
+        splittedNewNode->keyQuantity = index / 2;
 
-        // move up recursively
-        moveUp(parent->parentNode, parent->word[parent->keyQuantity], parent, secondNode);
+        moveUp(parent->parentNode, parent->word[parent->keyQuantity], parent, splittedNewNode);
     }
-
-    // if (parent->keyQuantity == order)
-    // {
-    //     // 1 ta beshi hoye gese, so split korte hbe
-    //     node *splittedNewNode = createNewNode();
-    //     int count = parent->keyQuantity, j = 0, index;
-    //     // left biased
-    //     for (index = count - count / 2; index < order; index++)
-    //     {
-    //         splittedNewNode->word[j] = parent->word[index];
-
-    //         if (j == 0)
-    //         {
-    //             splittedNewNode->childNodePointers[0] = parent->childNodePointers[index];
-    //             splittedNewNode->childNodePointers[0]->parentNode = splittedNewNode;
-    //         }
-    //         splittedNewNode->childNodePointers[j + 1] = parent->childNodePointers[index + 1];
-    //         splittedNewNode->childNodePointers[j + 1]->parentNode = splittedNewNode;
-
-    //         j++;
-    //     }
-
-    //     parent->keyQuantity -= (index / 2 + 1);
-    //     splittedNewNode->keyQuantity = index / 2;
-
-    //     moveUp(parent->parentNode, parent->word[parent->keyQuantity], parent, splittedNewNode);
-    // }
 }
 void addToLeaf(string word, string meaning)
 {
@@ -234,7 +211,7 @@ bool buildTree()
     root = createNewNode();
 
     ifstream file;
-    file.open("english_dictionary1.txt");
+    file.open("words.txt");
     if (!file)
     {
         printf("file not found\n");
@@ -261,6 +238,7 @@ void searchMeaning()
 
     hopsize = 0;
     node *leaf = searchPosition(root, targetWord);
+    path(root, targetWord);
     for (i = 0; i < leaf->keyQuantity; i++)
     {
         if (leaf->word[i] == targetWord)
@@ -281,7 +259,10 @@ int main()
     cout << "Enter order: ";
     cin >> order;
     key = order - 1;
-
+    ofstream file;
+    file.open("path.txt");
+    file << "";
+    file.close();
     if (buildTree())
         cout << "tree built successfully";
     else

@@ -1,2 +1,2 @@
-hello =>  See Halloo.
-hop Size 10
+among =>  Alt. of Amongst
+hop Size 16
