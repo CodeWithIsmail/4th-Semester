@@ -1,135 +1,69 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <string.h>
 #include <unistd.h>
-#include <pthread.h>
 #include <semaphore.h>
-#include <stdbool.h>
+#include <pthread.h>
+#include <stdlib.h>
 
-pthread_t *producers;
-pthread_t *consumers;
+#define buffer_size 10
 
-sem_t buffer_mutex, empty, full;
+sem_t empty, mutex, full;
+int buffer[buffer_size], in, out;
 
-int *buffer, buffer_pos = -1, producer_count, consumer_count, buffer_len;
+void *produce(void *param);
+void *consume(void *param);
 
-int produce(pthread_t self)
+int main()
 {
-    int i = 0;
-    int p = 1 + rand() % 40;
-    while (!pthread_equal(*(producers + i), self) && i < producer_count)
-    {
-        i++;
-    }
-    printf("Producer %d produced %d \n", i + 1, p);
-    return p;
+    sem_init(&empty, 0, buffer_size);
+    sem_init(&full, 0, 0);
+    sem_init(&mutex, 0, 1);
+    int thread_size = 1;
+    pthread_t producer, consumer;
+    pthread_attr_t attr;
+
+    pthread_attr_init(&attr);
+    int i;
+    pthread_create(&producer, &attr, produce, NULL);
+    pthread_create(&consumer, &attr, consume, NULL);
+
+    pthread_join(producer, NULL);
+    pthread_join(consumer, NULL);
+
+    sem_destroy(&empty);
+    sem_destroy(&full);
+    sem_destroy(&mutex);
+    return 0;
 }
 
-void consume(int p, pthread_t self)
+void *produce(void *param)
 {
-    int i = 0;
-    while (!pthread_equal(*(consumers + i), self) && i < consumer_count)
+    int item;
+    while (1)
     {
-        i++;
-    }
-
-    printf("Buffer:");
-    for (i = 0; i <= buffer_pos; ++i)
-        printf("%d ", *(buffer + i));
-    printf("\nConsumer %d consumed %d \nCurrent buffer len: %d\n", i + 1, p, buffer_pos);
-}
-
-void *producer(void *args)
-{
-    while (true)
-    {
-        int p = produce(pthread_self());
+        item = rand() % 20;
         sem_wait(&empty);
-        sem_wait(&buffer_mutex);
-        ++buffer_pos;
-        *(buffer + buffer_pos) = p;
-        sem_post(&buffer_mutex);
+        sem_wait(&mutex);
+        buffer[in] = item;
+        printf("Produced item %d at index %d\n", item, in);
+        in = (in + 1) % buffer_size;
+        sem_post(&mutex);
         sem_post(&full);
-        sleep(1 + rand() % 3);
+        sleep(rand() % 2);
     }
-    return NULL;
 }
 
-void *consumer(void *args)
+void *consume(void *param)
 {
-    int c;
-    while (true)
+    int item;
+    while (1)
     {
         sem_wait(&full);
-        sem_wait(&buffer_mutex);
-        c = *(buffer + buffer_pos);
-        consume(c, pthread_self());
-        --buffer_pos;
-        sem_post(&buffer_mutex);
+        sem_wait(&mutex);
+        item = buffer[out];
+        printf("Consumed item %d from from %d\n", item, out);
+        out = (out + 1) % buffer_size;
+        sem_post(&mutex);
         sem_post(&empty);
-        sleep(1 + rand() % 5);
+        sleep(rand() % 2);
     }
-    return NULL;
-}
-
-int main(void)
-{
-
-    int i, err;
-
-    srand(time(NULL));
-
-    sem_init(&buffer_mutex, 0, 1);
-    sem_init(&full, 0, 0);
-
-    printf("Enter the number of Producers: ");
-    scanf("%d", &producer_count);
-    producers = (pthread_t *)malloc(producer_count * sizeof(pthread_t));
-
-    printf("Enter the number of Consumers: ");
-    scanf("%d", &consumer_count);
-    consumers = (pthread_t *)malloc(consumer_count * sizeof(pthread_t));
-
-    printf("Enter buffer capacity: ");
-    scanf("%d", &buffer_len);
-    buffer = (int *)malloc(buffer_len * sizeof(int));
-
-    sem_init(&empty, 0, buffer_len);
-
-    for (i = 0; i < producer_count; i++)
-    {
-        err = pthread_create(producers + i, NULL, &producer, NULL);
-        if (err != 0)
-        {
-            printf("Error creating producer %d: %s\n", i + 1, strerror(err));
-        }
-        else
-        {
-            printf("Successfully created producer %d\n", i + 1);
-        }
-    }
-
-    for (i = 0; i < consumer_count; i++)
-    {
-        err = pthread_create(consumers + i, NULL, &consumer, NULL);
-        if (err != 0)
-        {
-            printf("Error creating consumer %d: %s\n", i + 1, strerror(err));
-        }
-        else
-        {
-            printf("Successfully created consumer %d\n", i + 1);
-        }
-    }
-
-    for (i = 0; i < producer_count; i++)
-    {
-        pthread_join(*(producers + i), NULL);
-    }
-    for (i = 0; i < consumer_count; i++)
-    {
-        pthread_join(*(consumers + i), NULL);
-    }
-    return 0;
 }
