@@ -17,9 +17,9 @@ bool safetyAlgo()
         for (j = 1; j <= resourseQuantity; j++)
         {
             remainNeed[i][j] = maxNeed[i][j] - allocation[i][j];
-          //  cout << remainNeed[i][j] << " ";
+            //  cout << remainNeed[i][j] << " ";
         }
-     //   cout << "\n";
+        //   cout << "\n";
     }
 
     bool done[processQuantity];
@@ -92,28 +92,28 @@ bool resourceReqAlgo(int processNum, int req[])
     for (i = 1; i <= resourseQuantity; i++)
     {
         allocation[processNum][i] += req[i];
-        cout << allocation[processNum][i] << " ";
+        //  cout << allocation[processNum][i] << " ";
     }
     cout << "\n";
     for (i = 1; i <= resourseQuantity; i++)
     {
         available[i] -= req[i];
-        cout << available[i] << " ";
+        //  cout << available[i] << " ";
     }
     cout << "\n";
     for (i = 1; i <= resourseQuantity; i++)
     {
         remainNeed[processNum][i] -= req[i];
-        cout << remainNeed[processNum][i] << " ";
+        //   cout << remainNeed[processNum][i] << " ";
     }
-    cout << "\n";
+    //  cout << "\n";
 }
 int main()
 {
     int i, j;
-    //   cout << "Enter number or process: ";
+    //   cout << "Enter number of process: ";
     cin >> processQuantity;
-    //  cout << "Enter number or resources: ";
+    //  cout << "Enter number of resources: ";
     cin >> resourseQuantity;
     // int allocation[processQuantity + 1][resourseQuantity + 1], maxNeed[processQuantity + 1][resourseQuantity + 1], remainNeed[processQuantity + 1][resourseQuantity + 1];
     // int available[resourseQuantity + 1];

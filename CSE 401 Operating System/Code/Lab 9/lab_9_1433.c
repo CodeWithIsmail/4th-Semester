@@ -7,7 +7,7 @@
 #define NUM_READERS 5
 #define NUM_WRITERS 1
 
-sem_t mutex, rw_mutex;
+sem_t mutex, db;
 int read_count = 0;
 
 int shared_data;
@@ -22,7 +22,7 @@ int main()
     int reader_ids[NUM_READERS], writer_ids[NUM_WRITERS];
 
     sem_init(&mutex, 0, 1);
-    sem_init(&rw_mutex, 0, 1);
+    sem_init(&db, 0, 1);
 
     for (int i = 0; i < NUM_READERS; i++)
     {
@@ -47,7 +47,7 @@ int main()
     }
 
     sem_destroy(&mutex);
-    sem_destroy(&rw_mutex);
+    sem_destroy(&db);
 
     return 0;
 }
@@ -61,7 +61,7 @@ void *reader(void *arg)
         read_count++;
         if (read_count == 1)
         {
-            sem_wait(&rw_mutex);
+            sem_wait(&db);
         }
         sem_post(&mutex);
         printf("Reader %d reads the shared data: %d, readers count: %d\n", id, shared_data, read_count);
@@ -69,7 +69,7 @@ void *reader(void *arg)
         read_count--;
         if (read_count == 0)
         {
-            sem_post(&rw_mutex);
+            sem_post(&db);
         }
         sem_post(&mutex);
         sleep(rand() % 5);
@@ -82,10 +82,10 @@ void *writer(void *arg)
     int id = *(int *)arg;
     while (1)
     {
-        sem_wait(&rw_mutex);
+        sem_wait(&db);
         shared_data = rand() % 100;
         printf("Writer %d writes the value %d in the shared data\n", id, shared_data);
-        sem_post(&rw_mutex);
+        sem_post(&db);
         sleep(rand() % 5);
     }
     return NULL;
